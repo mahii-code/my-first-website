@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sorry Game</title>
+    <style>
+      :root {
+        --sky-1: #eef8ff;
+        --sky-2: #f9f0ff;
+        --sky-3: #fffaf0;
+        --blue: #a8d3ff;
+        --lavender: #d9c7ff;
+        --pink: #ffc9d9;
+        --cream: #fff7e7;
+        --mint: #c9f0df;
+        --peach: #ffd9c7;
+        --text: #4d5370;
+        --muted: #6d7690;
+        --primary: #7caaf8;
+        --primary-dark: #5d7ce8;
+        --success: #7cc9ac;
+        --warning: #ffd19c;
+        --shadow: rgba(130, 148, 184, 0.2);
+      }
+
+      * { box-sizing: border-box; }
+
+      html, body {
+        margin: 0;
+        min-height: 100%;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        color: var(--text);
+        background: linear-gradient(180deg, var(--sky-1) 0%, #f8f7ff 36%, #fffaf8 100%);
+      }
+
+      body {
+        min-height: 100vh;
+        position: relative;
+        overflow-x: hidden;
+      }
+
+      .scene {
+        position: relative;
+        min-height: 100vh;
+        padding: 22px;
+      }
+
+      .floating-bg {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        overflow: hidden;
+      }
+
+      .cloud, .sparkle, .mini-heart, .star {
+        position: absolute;
+        opacity: 0.82;
+        animation: drift 16s ease-in-out infinite alternate;
+      }
+
+      .cloud {
+        width: 120px;
+        height: 48px;
+        background: rgba(255,255,255,0.5);
+        border-radius: 999px;
+        box-shadow: 30px -12px 0 8px rgba(255,255,255,0.42), 68px 8px 0 6px rgba(255,255,255,0.35);
+      }
+
+      .cloud::before,
+      .cloud::after {
+        content: "";
+        position: absolute;
+        background: rgba(255,255,255,0.5);
+        border-radius: 50%;
+      }
+
+      .cloud::before {
+        width: 50px;
+        height: 50px;
+        left: 16px;
+        top: -18px;
+      }
+
+      .cloud::after {
+        width: 42px;
+        height: 42px;
+        right: 18px;
+        top: -10px;
+      }
+
+      .sparkle {
+        color: #fff0a7;
+        font-size: 1.6rem;
+        text-shadow: 0 0 18px rgba(255, 240, 167, 0.7);
+      }
+
+      .mini-heart {
+        color: #ffb3cf;
+        font-size: 1.4rem;
+        filter: drop-shadow(0 0 9px rgba(255, 180, 210, 0.6));
+      }
+
+      .star {
+        color: #fff9db;
+        font-size: 1.2rem;
+      }
+
+      .app {
+        position: relative;
+        z-index: 1;
+        max-width: 1100px;
+        margin: 0 auto;
+        min-height: calc(100vh - 44px);
+      }
+
+      .screen {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: calc(100vh - 44px);
+      }
+
+      .screen.hidden,
+      .modal.hidden,
+      .end-screen.hidden {
+        display: none !important;
+      }
+
+      .card {
+        position: relative;
+        background: rgba(255,255,255,0.68);
+        border: 1px solid rgba(199, 210, 236, 0.6);
+        border-radius: 30px;
+        box-shadow: 0 26px 60px rgba(149, 165, 200, 0.18);
+        backdrop-filter: blur(10px);
+      }
+
+      .welcome-card {
+        width: min(760px, 100%);
+        padding: 34px 24px 26px;
+        text-align: center;
+        overflow: hidden;
+      }
+
+      .welcome-badges {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 18px;
+      }
+
+      .badge {
+        background: linear-gradient(135deg, rgba(168,211,255,0.35), rgba(217,199,255,0.35));
+        color: var(--muted);
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        padding: 8px 14px;
+        border-radius: 999px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(2.4rem, 5vw, 4.2rem);
+        line-height: 1.05;
+        letter-spacing: -0.06em;
+        color: var(--text);
+      }
+
+      .welcome-subtext {
+        max-width: 590px;
+        margin: 18px auto 0;
+        font-size: clamp(1rem, 2vw, 1.2rem);
+        color: var(--muted);
+        line-height: 1.7;
+      }
+
+      .cta-row {
+        display: flex;
+        justify-content: center;
+        gap: 14px;
+        flex-wrap: wrap;
+        margin-top: 30px;
+      }
+
+      button {
+        border: none;
+        border-radius: 16px;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+      }
+
+      button:hover {
+        transform: translateY(-1px);
+      }
+
+      button:active {
+        transform: translateY(0);
+      }
+
+      .primary-btn,
+      .secondary-btn,
+      .safe-btn,
+      .choice-btn,
+      .challenge-card {
+        font-weight: 700;
+      }
+
+      .primary-btn {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--lavender) 100%);
+        color: white;
+        padding: 16px 28px;
+        font-size: 1.05rem;
+        box-shadow: 0 16px 35px rgba(122, 159, 255, 0.35);
+      }
+
+      .secondary-btn {
+        background: linear-gradient(135deg, #fff7fb, #fff0f7);
+        color: var(--text);
+        padding: 14px 22px;
+        border: 1px solid rgba(255, 167, 202, 0.5);
+      }
+
+      .safe-btn {
+        background: linear-gradient(135deg, #fefaff, #f7f0ff);
+        color: var(--text);
+        border: 1px solid rgba(168, 211, 255, 0.45);
+        padding: 12px 18px;
+      }
+
+      .game-panel {
+        width: min(980px, 100%);
+        padding: 18px 18px 22px;
+      }
+
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        margin-bottom: 18px;
+        flex-wrap: wrap;
+      }
+
+      .heading-group {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+
+      .tiny-character {
+        width: 56px;
+        height: 56px;
+        position: relative;
+        border-radius: 18px;
+        background: linear-gradient(135deg, var(--blue), var(--pink));
+        box-shadow: inset 0 -8px 0 rgba(255,255,255,0.25);
+      }
+
+      .tiny-character::before,
+      .tiny-character::after {
+        content: "";
+        position: absolute;
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: var(--text);
+        top: 20px;
+      }
+
+      .tiny-character::before { left: 15px; }
+      .tiny-character::after { right: 15px; }
+
+      .tiny-character .smile {
+        position: absolute;
+        left: 18px;
+        right: 18px;
+        bottom: 13px;
+        height: 10px;
+        border-bottom: 3px solid var(--text);
+        border-radius: 0 0 12px 12px;
+      }
+
+      .title-pill {
+        padding: 10px 14px;
+        border-radius: 999px;
+        background: rgba(232, 219, 255, 0.72);
+        color: var(--muted);
+        font-size: 0.82rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        font-weight: 800;
+      }
+
+      .status-box {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .status-pill {
+        background: linear-gradient(135deg, rgba(201,240,223,0.7), rgba(255,246,196,0.8));
+        border-radius: 999px;
+        padding: 10px 18px;
+        font-size: 0.92rem;
+        font-weight: 700;
+        color: var(--muted);
+      }
+
+      .progress-wrap {
+        width: min(360px, 52vw);
+        min-width: 180px;
+      }
+
+      .progress-bar {
+        height: 16px;
+        background: rgba(212, 223, 255, 0.72);
+        border-radius: 999px;
+        overflow: hidden;
+        box-shadow: inset 0 2px 7px rgba(123, 124, 127, 0.12);
+      }
+
+      .progress-fill {
+        width: 0%;
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, var(--pink) 0%, var(--lavender) 48%, var(--blue) 100%);
+        transition: width 0.3s ease;
+      }
+
+      .progress-label {
+        display: flex;
+        justify-content: space-between;
+        color: var(--muted);
+        font-size: 0.8rem;
+        margin-top: 8px;
+        font-weight: 700;
+      }
+
+      .message-box {
+        background: rgba(255,255,255,0.68);
+        border: 1px solid rgba(198, 208, 234, 0.5);
+        border-radius: 18px;
+        padding: 14px 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 64px;
+        text-align: center;
+        font-weight: 700;
+        color: var(--muted);
+        margin-bottom: 18px;
+      }
+
+      .play-area {
+        position: relative;
+        min-height: 430px;
+        border-radius: 26px;
+        background: linear-gradient(180deg, rgba(245,250,255,0.9) 0%, rgba(255,248,252,0.8) 100%);
+        border: 1px solid rgba(190, 202, 238, 0.5);
+        overflow: hidden;
+      }
+
+      .floating-heart {
+        position: absolute;
+        width: 52px;
+        height: 52px;
+        border: none;
+        background: transparent;
+        color: #ff9bbd;
+        font-size: clamp(1.8rem, 3vw, 2.4rem);
+        text-shadow: 0 0 16px rgba(255, 164, 202, 0.7);
+        cursor: pointer;
+        animation: floaty 4s ease-in-out infinite;
+      }
+
+      .floating-heart:hover {
+        transform: scale(1.12) rotate(8deg);
+      }
+
+      .floating-heart.collected {
+        opacity: 0;
+        transform: scale(1.5) translateY(-18px);
+      }
+
+      .field-footer {
+        position: absolute;
+        left: 18px;
+        right: 18px;
+        bottom: 16px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        pointer-events: none;
+      }
+
+      .character {
+        position: relative;
+        width: 136px;
+        height: 132px;
+        display: grid;
+        place-items: center;
+        background: linear-gradient(135deg, rgba(168,211,255,0.7), rgba(217,199,255,0.8));
+        border-radius: 30px 30px 28px 28px;
+        box-shadow: inset 0 -10px 0 rgba(255,255,255,0.22);
+        filter: drop-shadow(0 14px 24px rgba(160, 172, 210, 0.35));
+      }
+
+      .character .face {
+        position: relative;
+        width: 94px;
+        height: 90px;
+        padding-top: 6px;
+      }
+
+      .character .eyes {
+        display: flex;
+        justify-content: space-between;
+        width: 56px;
+        margin: 0 auto;
+      }
+
+      .character .eye {
+        width: 11px;
+        height: 15px;
+        background: var(--text);
+        border-radius: 50%;
+        position: relative;
+        transition: all 0.18s ease;
+      }
+
+      .character .eye::after {
+        content: "";
+        position: absolute;
+        width: 3px;
+        height: 3px;
+        border-radius: 50%;
+        background: white;
+        left: 2px;
+        top: 2px;
+      }
+
+      .character .mouth {
+        position: absolute;
+        left: 50%;
+        bottom: 14px;
+        width: 42px;
+        height: 18px;
+        transform: translateX(-50%);
+        border-bottom: 4px solid var(--text);
+        border-radius: 0 0 18px 18px;
+      }
+
+      .character.happy .mouth {
+        width: 52px;
+        height: 28px;
+        border-bottom: 5px solid var(--text);
+        border-radius: 0 0 30px 30px;
+      }
+
+      .character.sad .mouth {
+        width: 38px;
+        height: 18px;
+        border-top: 4px solid var(--text);
+        border-bottom: none;
+        border-radius: 18px 18px 0 0;
+        bottom: 18px;
+      }
+
+      .character.blink .eye {
+        height: 4px;
+        border-radius: 14px;
+      }
+
+      .character .blush {
+        position: absolute;
+        width: 15px;
+        height: 11px;
+        background: rgba(255, 169, 202, 0.5);
+        border-radius: 50%;
+        top: 48px;
+      }
+
+      .character .blush.left { left: 10px; }
+      .character .blush.right { right: 10px; }
+
+      .mini-area {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(220px, 1fr));
+        gap: 16px;
+        margin-top: 20px;
+      }
+
+      .challenge-card {
+        width: 100%;
+        background: linear-gradient(135deg, rgba(255,255,255,0.8), rgba(243,243,255,0.8));
+        border: 1px solid rgba(193, 201, 235, 0.5);
+        border-radius: 22px;
+        padding: 18px 16px;
+        min-height: 116px;
+        text-align: left;
+        color: var(--text);
+        box-shadow: 0 14px 30px rgba(160, 176, 221, 0.12);
+      }
+
+      .challenge-card:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+
+      .challenge-card.complete {
+        border-color: rgba(117, 199, 170, 0.65);
+        background: linear-gradient(135deg, rgba(230,255,245,0.95), rgba(255,255,255,0.8));
+      }
+
+      .challenge-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 8px;
+      }
+
+      .challenge-emoji {
+        width: 42px;
+        height: 42px;
+        display: grid;
+        place-items: center;
+        font-size: 1.45rem;
+        border-radius: 14px;
+        background: rgba(255,255,255,0.8);
+      }
+
+      .challenge-status {
+        font-size: 0.73rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        font-weight: 800;
+        color: var(--muted);
+      }
+
+      .challenge-card h3 {
+        margin: 0;
+        font-size: 1.1rem;
+      }
+
+      .challenge-card p {
+        margin: 8px 0 0;
+        color: var(--muted);
+        font-size: 0.9rem;
+        line-height: 1.5;
+      }
+
+      .letter-card {
+        margin-top: 20px;
+        background: linear-gradient(135deg, rgba(255,246,252,0.9), rgba(245,248,255,0.9));
+        border: 1px solid rgba(195, 211, 252, 0.65);
+        border-radius: 26px;
+        padding: 18px;
+      }
+
+      .letter-card.hidden {
+        display: none;
+      }
+
+      .letter-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .letter-header h3 {
+        margin: 0;
+        font-size: 1.3rem;
+      }
+
+      .letter-form {
+        display: grid;
+        grid-template-columns: 1fr 1.08fr;
+        gap: 16px;
+        margin-top: 16px;
+      }
+
+      label {
+        display: block;
+        font-size: 0.8rem;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 8px;
+      }
+
+      input[type="text"],
+      textarea {
+        width: 100%;
+        border: 1px solid rgba(176, 188, 214, 0.8);
+        background: rgba(255,255,255,0.75);
+        border-radius: 16px;
+        padding: 14px 16px;
+        font: inherit;
+        color: var(--text);
+        resize: vertical;
+      }
+
+      textarea {
+        min-height: 140px;
+      }
+
+      .preview-box {
+        background: rgba(255,255,255,0.8);
+        border: 1px solid rgba(179, 193, 235, 0.72);
+        border-radius: 18px;
+        padding: 18px 16px;
+        min-height: 160px;
+        white-space: pre-line;
+        line-height: 1.7;
+        color: var(--text);
+      }
+
+      .finish-row {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 18px;
+      }
+
+      .actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(95, 104, 139, 0.42);
+        display: grid;
+        place-items: center;
+        z-index: 20;
+        padding: 20px;
+      }
+
+      .modal-card {
+        width: min(540px, 100%);
+        background: rgba(255,255,255,0.96);
+        border: 1px solid rgba(196, 208, 238, 0.8);
+        border-radius: 30px;
+        box-shadow: 0 20px 50px rgba(109, 122, 187, 0.24);
+        padding: 22px 20px 18px;
+      }
+
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 8px;
+      }
+
+      .modal-header h2 {
+        margin: 0;
+        font-size: clamp(1.6rem, 3vw, 2rem);
+      }
+
+      .close-btn {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        background: rgba(235, 239, 255, 0.95);
+        font-size: 1.4rem;
+        color: var(--muted);
+      }
+
+      .challenge-prompt {
+        font-size: 1.04rem;
+        color: var(--muted);
+        line-height: 1.6;
+        margin: 14px 0 18px;
+      }
+
+      .choice-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .choice-btn {
+        text-align: left;
+        padding: 14px 16px;
+        color: var(--text);
+        background: linear-gradient(135deg, rgba(247,249,255,0.9), rgba(255,246,252,0.9));
+        border: 1px solid rgba(178, 190, 220, 0.7);
+      }
+
+      .choice-btn.correct {
+        background: linear-gradient(135deg, rgba(209,255,228,0.9), rgba(236,255,244,0.9));
+        border-color: rgba(117,199,170,0.7);
+      }
+
+      .choice-btn.wrong {
+        background: linear-gradient(135deg, rgba(255,234,234,0.95), rgba(255,248,248,0.95));
+        border-color: rgba(255, 159, 176, 0.8);
+      }
+
+      .feedback {
+        margin-top: 16px;
+        min-height: 24px;
+        color: #5d7be8;
+        font-weight: 700;
+      }
+
+      .end-screen {
+        position: fixed;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        z-index: 40;
+        padding: 20px;
+        background: rgba(255,255,255,0.2);
+      }
+
+      .end-panel {
+        width: min(700px, 100%);
+        background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(249,247,255,0.88));
+        border: 1px solid rgba(191, 209, 243, 0.82);
+        border-radius: 30px;
+        box-shadow: 0 24px 60px rgba(143, 153, 192, 0.2);
+        padding: 28px 18px 22px;
+        text-align: center;
+      }
+
+      .end-panel h2 {
+        margin: 0 0 6px;
+        font-size: clamp(2rem, 4vw, 3rem);
+      }
+
+      .end-panel p {
+        margin: 0 0 18px;
+        color: var(--muted);
+        font-size: 1.06rem;
+      }
+
+      .celebration {
+        position: relative;
+        display: grid;
+        place-items: center;
+        margin: 18px auto 26px;
+        width: 220px;
+        height: 170px;
+      }
+
+      .celebration .big-character {
+        position: relative;
+        width: 170px;
+        height: 160px;
+        border-radius: 38px 38px 30px 30px;
+        background: linear-gradient(135deg, var(--blue), var(--lavender));
+        box-shadow: inset 0 -10px 0 rgba(255,255,255,0.25);
+      }
+
+      .big-character .face {
+        position: absolute;
+        inset: 24px 24px 18px;
+      }
+
+      .big-character .eye {
+        position: absolute;
+        top: 20px;
+        width: 14px;
+        height: 18px;
+        border-radius: 50%;
+        background: var(--text);
+      }
+
+      .big-character .eye.left { left: 26px; }
+      .big-character .eye.right { right: 26px; }
+
+      .big-character .smile {
+        position: absolute;
+        left: 50%;
+        bottom: 18px;
+        width: 54px;
+        height: 28px;
+        transform: translateX(-50%);
+        border-bottom: 5px solid var(--text);
+        border-radius: 0 0 30px 30px;
+      }
+
+      .sparkle-pop {
+        position: absolute;
+        font-size: 2rem;
+        animation: sparkleBurst 2.5s ease-in-out infinite;
+      }
+
+      .sparkle-pop:nth-child(2) { left: 12px; top: 20px; color: #ffd76a; }
+      .sparkle-pop:nth-child(3) { right: 18px; top: 18px; color: #ffc5dc; }
+      .sparkle-pop:nth-child(4) { left: 30px; bottom: 8px; font-size: 1.5rem; color: #b5d5ff; }
+      .sparkle-pop:nth-child(5) { right: 30px; bottom: 16px; font-size: 1.6rem; color: #cfb9ff; }
+
+      .end-actions {
+        display: flex;
+        justify-content: center;
+        gap: 14px;
+        flex-wrap: wrap;
+      }
+
+      @keyframes drift {
+        0% { transform: translate3d(0, 0, 0) rotate(0deg); }
+        100% { transform: translate3d(24px, -10px, 0) rotate(6deg); }
+      }
+
+      @keyframes floaty {
+        0%, 100% { transform: translateY(0) rotate(-7deg) scale(1); }
+        50% { transform: translateY(-10px) rotate(5deg) scale(1.08); }
+      }
+
+      @keyframes sparkleBurst {
+        0%, 100% { opacity: 0.3; transform: scale(0.8) translateY(0); }
+        50% { opacity: 1; transform: scale(1.2) translateY(-12px); }
+      }
+
+      @media (max-width: 760px) {
+        .mini-area,
+        .letter-form {
+          grid-template-columns: 1fr;
+        }
+
+        .topbar {
+          align-items: flex-start;
+        }
+
+        .title-pill {
+          display: none;
+        }
+
+        .progress-wrap {
+          width: 100%;
+        }
+
+        .game-panel {
+          padding: 14px;
+        }
+
+        .play-area {
+          min-height: 390px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="scene">
+      <div class="floating-bg" aria-hidden="true">
+        <div class="cloud" style="left: 8%; top: 14%; transform: scale(0.9);"></div>
+        <div class="cloud" style="right: 10%; top: 18%; transform: scale(1.2);"></div>
+        <div class="cloud" style="left: 22%; bottom: 14%; transform: scale(1.1);"></div>
+        <div class="sparkle" style="left: 14%; top: 28%;">✦</div>
+        <div class="sparkle" style="right: 20%; top: 26%;">✦</div>
+        <div class="sparkle" style="left: 50%; top: 12%;">✦</div>
+        <div class="mini-heart" style="left: 66%; top: 52%;">♥</div>
+        <div class="mini-heart" style="left: 18%; top: 62%;">♥</div>
+        <div class="star" style="left: 40%; top: 24%;">★</div>
+        <div class="star" style="right: 25%; bottom: 24%;">★</div>
+        <div class="star" style="left: 78%; top: 36%;">★</div>
+      </div>
+
+      <main class="app">
+        <section class="screen welcome-screen" id="welcomeScreen">
+          <div class="card welcome-card">
+            <div class="welcome-badges">
+              <span class="badge">Kindness</span>
+              <span class="badge">Care</span>
+              <span class="badge">Fixing things</span>
+            </div>
+            <h1>Hey... can we fix this? 🥺</h1>
+            <p class="welcome-subtext">
+              Let’s gather little hearts, complete a few caring mini-challenges, and turn this into a fresh new start with warmth, care, and a thoughtful plan.
+            </p>
+            <div class="cta-row">
+              <button class="primary-btn" id="startBtn" type="button">Start the fix</button>
+              <button class="secondary-btn" id="introReplayBtn" type="button">Replay intro</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="screen game-screen hidden" id="gameScreen">
+          <div class="card game-panel">
+            <div class="topbar">
+              <div class="heading-group">
+                <div class="tiny-character" aria-hidden="true">
+                  <span class="smile"></span>
+                </div>
+                <div class="title-pill">Sorry Game</div>
+              </div>
+
+              <div class="status-box">
+                <div class="status-pill" id="stateBadge">Gathering hearts</div>
+                <div class="progress-wrap">
+                  <div class="progress-bar" aria-label="Heart progress bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                  </div>
+                  <div class="progress-label">
+                    <span>Hearts</span>
+                    <span id="progressText">0 / 10</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="message-box" id="messageBox">
+              Tap the floating hearts to build kindness one little moment at a time.
+            </div>
+
+            <div class="play-area" id="playArea">
+              <div id="heartPool" aria-live="polite"></div>
+              <div class="field-footer">
+                <div class="character" id="gameCharacter" aria-label="Cute character">
+                  <div class="face">
+                    <div class="blush left"></div>
+                    <div class="blush right"></div>
+                    <div class="eyes">
+                      <span class="eye"></span>
+                      <span class="eye"></span>
+                    </div>
+                    <div class="mouth"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mini-area">
+              <button class="challenge-card" id="challenge1Btn" type="button" disabled>
+                <div class="challenge-top">
+                  <div class="challenge-emoji">💗</div>
+                  <span class="challenge-status">Ready</span>
+                </div>
+                <h3>Mini challenge 1</h3>
+                <p>Kindness check. Pick the gentlest action.</p>
+              </button>
+
+              <button class="challenge-card" id="challenge2Btn" type="button" disabled>
+                <div class="challenge-top">
+                  <div class="challenge-emoji">✨</div>
+                  <span class="challenge-status">Ready</span>
+                </div>
+                <h3>Mini challenge 2</h3>
+                <p>Choice time. Pick the reply that feels warm and respectful.</p>
+              </button>
+            </div>
+
+            <div class="letter-card hidden" id="letterCard">
+              <div class="letter-header">
+                <h3>Custom apology letter</h3>
+                <span class="status-pill" id="letterBadge">Unlocked</span>
+              </div>
+
+              <div class="letter-form">
+                <div>
+                  <div>
+                    <label for="letterName">Your name</label>
+                    <input id="letterName" type="text" value="Friend" />
+                  </div>
+                  <div style="margin-top: 18px;">
+                    <label for="letterText">Your message</label>
+                    <textarea id="letterText">I’m sorry for the hurt and confusion. I care, and I want to do better by listening, being patient, and showing up with kindness.</textarea>
+                  </div>
+                  <div style="margin-top: 18px;">
+                    <button class="primary-btn" id="generateLetterBtn" type="button">Make my letter</button>
+                  </div>
+                </div>
+
+                <div>
+                  <label>Preview</label>
+                  <div class="preview-box" id="letterPreview">
+Dear Friend,
+
+I’m sorry for the hurt and confusion. I care, and I want to do better by listening, being patient, and showing up with kindness.
+
+I’m ready to make this right, one thoughtful step at a time.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="finish-row">
+              <div class="actions">
+                <button class="safe-btn" id="replayBtn" type="button">Replay</button>
+                <button class="primary-btn" id="finishBtn" type="button">Finish and celebrate</button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div class="modal hidden" id="challengeModal" aria-modal="true" role="dialog">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2 id="modalTitle">Mini challenge</h2>
+          <button class="close-btn" id="closeModalBtn" type="button" aria-label="Close mini challenge">×</button>
+        </div>
+        <p class="challenge-prompt" id="challengePrompt"></p>
+        <div class="choice-list" id="choiceList"></div>
+        <div class="feedback" id="challengeFeedback" aria-live="polite"></div>
+      </div>
+    </div>
+
+    <div class="end-screen hidden" id="endScreen">
+      <div class="end-panel">
+        <h2>We fixed it! 💖</h2>
+        <p>You listened, cared, and built something kinder together.</p>
+
+        <div class="celebration" aria-hidden="true">
+          <span class="sparkle-pop">✦</span>
+          <span class="sparkle-pop">♥</span>
+          <span class="sparkle-pop">✨</span>
+          <span class="sparkle-pop">✦</span>
+          <div class="big-character">
+            <div class="face">
+              <span class="eye left"></span>
+              <span class="eye right"></span>
+              <div class="smile"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="end-actions">
+          <button class="secondary-btn" id="tryAgainBtn" type="button">Try again</button>
+          <button class="primary-btn" id="replayFromEndBtn" type="button">Replay</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const state = {
+        collected: 0,
+        requiredHearts: 10,
+        challenge1Complete: false,
+        challenge2Complete: false,
+        gameStarted: false,
+        letterReady: false,
+      };
+
+      const welcomeScreen = document.getElementById('welcomeScreen');
+      const gameScreen = document.getElementById('gameScreen');
+      const startBtn = document.getElementById('startBtn');
+      const introReplayBtn = document.getElementById('introReplayBtn');
+      const replayBtn = document.getElementById('replayBtn');
+      const tryAgainBtn = document.getElementById('tryAgainBtn');
+      const replayFromEndBtn = document.getElementById('replayFromEndBtn');
+      const finishBtn = document.getElementById('finishBtn');
+      const heartPool = document.getElementById('heartPool');
+      const messageBox = document.getElementById('messageBox');
+      const progressFill = document.getElementById('progressFill');
+      const progressText = document.getElementById('progressText');
+      const stateBadge = document.getElementById('stateBadge');
+      const challenge1Btn = document.getElementById('challenge1Btn');
+      const challenge2Btn = document.getElementById('challenge2Btn');
+      const challengeModal = document.getElementById('challengeModal');
+      const modalTitle = document.getElementById('modalTitle');
+      const challengePrompt = document.getElementById('challengePrompt');
+      const choiceList = document.getElementById('choiceList');
+      const challengeFeedback = document.getElementById('challengeFeedback');
+      const closeModalBtn = document.getElementById('closeModalBtn');
+      const gameCharacter = document.getElementById('gameCharacter');
+      const letterCard = document.getElementById('letterCard');
+      const letterName = document.getElementById('letterName');
+      const letterText = document.getElementById('letterText');
+      const letterPreview = document.getElementById('letterPreview');
+      const generateLetterBtn = document.getElementById('generateLetterBtn');
+      const endScreen = document.getElementById('endScreen');
+
+      const messages = [
+        'A tiny bit of care goes a long way. Keep going!',
+        'You found another kind-hearted sparkle. Nice work!',
+        'The kindness meter is glowing brighter.',
+        'A little patience and care can make a big difference.',
+        'You are helping make things feel gentler again.'
+      ];
+
+      const challengeData = {
+        challenge1: {
+          title: 'Mini challenge 1: Kindness check',
+          prompt: 'Which action feels the gentlest and most caring?',
+          options: [
+            'Listen carefully and talk it through with patience.',
+            'Blame the other person and run away.',
+            'Pretend it never happened and keep ignoring it.'
+          ],
+          answer: 0,
+          success: 'Yes! Listening with patience is a kind start.',
+          retry: 'A little more warmth is needed there. Try another choice.'
+        },
+        challenge2: {
+          title: 'Mini challenge 2: Warm reply',
+          prompt: 'Which response would feel the most thoughtful and sincere?',
+          options: [
+            'A quick excuse with no real apology.',
+            'A warm, honest note showing care and effort.',
+            'A loud argument that escalates things.'
+          ],
+          answer: 1,
+          success: 'Perfect! A warm and honest note makes things feel safe again.',
+          retry: 'That reply still feels a little harsh. Pick the warmer option.'
+        }
+      };
+
+      function resetState() {
+        state.collected = 0;
+        state.challenge1Complete = false;
+        state.challenge2Complete = false;
+        state.gameStarted = true;
+        state.letterReady = false;
+
+        letterCard.classList.add('hidden');
+        challenge1Btn.classList.remove('complete');
+        challenge2Btn.classList.remove('complete');
+        challenge1Btn.disabled = true;
+        challenge2Btn.disabled = true;
+        challenge1Btn.querySelector('.challenge-status').textContent = 'Ready';
+        challenge2Btn.querySelector('.challenge-status').textContent = 'Ready';
+        finishBtn.disabled = false;
+        endScreen.classList.add('hidden');
+        challengeFeedback.textContent = '';
+        messageBox.style.borderColor = 'rgba(198, 208, 234, 0.5)';
+
+        gameCharacter.classList.remove('happy', 'sad', 'blink');
+        gameCharacter.classList.add('happy');
+        setMessage('Tap the floating hearts to build kindness one little moment at a time.');
+        updateProgress();
+        buildHearts();
+      }
+
+      function buildHearts() {
+        heartPool.innerHTML = '';
+        const totalHearts = 12;
+
+        for (let i = 0; i < totalHearts; i += 1) {
+          const heart = document.createElement('button');
+          heart.type = 'button';
+          heart.className = 'floating-heart';
+          heart.textContent = '♥';
+          heart.setAttribute('aria-label', 'Collect heart');
+
+          const left = 12 + Math.random() * 76;
+          const top = 16 + Math.random() * 56;
+          const size = 26 + Math.random() * 18;
+          heart.style.left = `${left}%`;
+          heart.style.top = `${top}%`;
+          heart.style.fontSize = `${size}px`;
+          heart.style.animationDelay = `${(i % 4) * 0.2}s`;
+
+          heart.addEventListener('click', () => {
+            if (!state.gameStarted || state.collected >= state.requiredHearts) {
+              return;
+            }
+
+            state.collected += 1;
+            heart.classList.add('collected');
+            heart.disabled = true;
+            updateProgress();
+
+            if (state.collected >= state.requiredHearts) {
+              challenge1Btn.disabled = false;
+              challenge2Btn.disabled = false;
+              setMessage('Amazing! You collected 10 hearts. Now let’s do two tiny care checks.');
+              stateBadge.textContent = 'Mini challenges unlocked';
+              gameCharacter.classList.remove('sad');
+              gameCharacter.classList.add('happy');
+            } else {
+              const idx = Math.floor(Math.random() * messages.length);
+              setMessage(messages[idx]);
+              gameCharacter.classList.remove('sad');
+              gameCharacter.classList.add('happy');
+            }
+
+            setTimeout(() => {
+              heart.remove();
+            }, 220);
+          });
+
+          heartPool.appendChild(heart);
+        }
+      }
+
+      function updateProgress() {
+        const percent = (state.collected / state.requiredHearts) * 100;
+        progressFill.style.width = `${Math.min(percent, 100)}%`;
+        progressText.textContent = `${state.collected} / ${state.requiredHearts}`;
+        stateBadge.textContent = state.collected >= state.requiredHearts ? 'Mini challenges unlocked' : 'Gathering hearts';
+      }
+
+      function setMessage(msg) {
+        messageBox.textContent = msg;
+      }
+
+      function openChallenge(key) {
+        const config = challengeData[key];
+        modalTitle.textContent = config.title;
+        challengePrompt.textContent = config.prompt;
+        choiceList.innerHTML = '';
+        challengeFeedback.textContent = '';
+
+        config.options.forEach((option, index) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'choice-btn';
+          btn.textContent = option;
+          btn.addEventListener('click', () => {
+            if (index === config.answer) {
+              btn.classList.add('correct');
+              challengeFeedback.textContent = config.success;
+              state[key + 'Complete'] = true;
+              setTimeout(() => {
+                challengeModal.classList.add('hidden');
+                markChallengeComplete(key);
+                checkLetterUnlock();
+              }, 700);
+            } else {
+              btn.classList.add('wrong');
+              challengeFeedback.textContent = config.retry;
+              setTimeout(() => btn.classList.remove('wrong'), 500);
+            }
+          });
+          choiceList.appendChild(btn);
+        });
+
+        challengeModal.classList.remove('hidden');
+      }
+
+      function markChallengeComplete(key) {
+        const btn = key === 'challenge1' ? challenge1Btn : challenge2Btn;
+        const status = btn.querySelector('.challenge-status');
+        btn.classList.add('complete');
+        status.textContent = 'Done';
+        btn.disabled = true;
+      }
+
+      function checkLetterUnlock() {
+        if (state.collected >= state.requiredHearts && state.challenge1Complete && state.challenge2Complete) {
+          letterCard.classList.remove('hidden');
+          state.letterReady = true;
+          setMessage('Your apology letter is ready. Add your own words and finish the fix.');
+          messageBox.style.borderColor = 'rgba(117, 199, 170, 0.7)';
+          stateBadge.textContent = 'Game complete';
+          gameCharacter.classList.add('happy');
+        }
+      }
+
+      function generateLetter() {
+        const name = (letterName.value || 'Friend').trim();
+        const typedText = (letterText.value || '').trim();
+
+        const safeText = typedText || 'I’m sorry for the hurt and confusion. I care, and I want to do better by listening, being patient, and showing up with kindness.';
+
+        letterPreview.textContent = `Dear ${name},\n\n${safeText}\n\nI’m ready to make this right with patience, care, and action.\n\nWith warmth,\n${name}`;
+      }
+
+      function showEndScreen() {
+        if (!state.letterReady || state.collected < state.requiredHearts) {
+          setMessage('Finish the kindness checks and unlock the letter before celebrating.');
+          return;
+        }
+
+        endScreen.classList.remove('hidden');
+        gameCharacter.classList.add('happy');
+        setMessage('You did it! The whole room feels lighter now.');
+      }
+
+      function showWelcome() {
+        welcomeScreen.classList.remove('hidden');
+        gameScreen.classList.add('hidden');
+        endScreen.classList.add('hidden');
+        challengeModal.classList.add('hidden');
+      }
+
+      function startGame() {
+        welcomeScreen.classList.add('hidden');
+        gameScreen.classList.remove('hidden');
+        resetState();
+      }
+
+      function replayGame() {
+        state.challenge1Complete = false;
+        state.challenge2Complete = false;
+        state.letterReady = false;
+        letterCard.classList.add('hidden');
+        messageBox.style.borderColor = 'rgba(198, 208, 234, 0.5)';
+        startGame();
+      }
+
+      startBtn.addEventListener('click', startGame);
+      introReplayBtn.addEventListener('click', showWelcome);
+      replayBtn.addEventListener('click', replayGame);
+      tryAgainBtn.addEventListener('click', () => {
+        endScreen.classList.add('hidden');
+        replayGame();
+      });
+      replayFromEndBtn.addEventListener('click', () => {
+        endScreen.classList.add('hidden');
+        replayGame();
+      });
+      finishBtn.addEventListener('click', showEndScreen);
+      closeModalBtn.addEventListener('click', () => challengeModal.classList.add('hidden'));
+      challenge1Btn.addEventListener('click', () => openChallenge('challenge1'));
+      challenge2Btn.addEventListener('click', () => openChallenge('challenge2'));
+      generateLetterBtn.addEventListener('click', generateLetter);
+      letterName.addEventListener('input', generateLetter);
+      letterText.addEventListener('input', generateLetter);
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+          challengeModal.classList.add('hidden');
+        }
+      });
+
+      showWelcome();
+    </script>
+  </body>
+</html>
